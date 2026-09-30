@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Project Vault - Live Runner Edition</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        vaultBg: '#09090B',
+                        vaultPanel: '#0D0F14',
+                        vaultCard: '#111318',
+                        vaultBorder: '#272A33',
+                        neonBlue: '#00f0ff',
+                        neonPurple: '#7000ff',
+                        neonGreen: '#00ff88',
+                        neonPink: '#ff007f',
+                        neonAmber: '#ffb700'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            background-color: #09090B;
+            color: #E2E8F0;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #09090B;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #272A33;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00f0ff;
+        }
+
+        /* Neon Glow Effects */
+        .glow-blue { box-shadow: 0 0 15px rgba(0, 240, 255, 0.25); }
+        .glow-purple { box-shadow: 0 0 15px rgba(112, 0, 255, 0.25); }
+        .glow-green { box-shadow: 0 0 15px rgba(0, 255, 136, 0.25); }
+        
+        .card-lift {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-lift:hover {
+            transform: translateY(-4px);
+            border-color: #00f0ff;
+            box-shadow: 0 0 18px rgba(0, 240, 255, 0.2);
+        }
+
+        /* Modal backdrop blur */
+        .backdrop-blur-md {
+            backdrop-filter: blur(8px);
+        }
+
+        /* Editor Line Numbers Simulation background */
+        .editor-bg {
+            background: #09090b;
+            background-image: linear-gradient(rgba(39, 42, 51, 0.3) 1px, transparent 1px);
+            background-size: 100% 1.5rem;
+        }
+
+        .tab-active {
+            border-bottom: 2px solid #00f0ff;
+            color: #00f0ff !important;
+            background-color: rgba(0, 240, 255, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-vaultBg text-slate-200 antialiased h-screen w-screen flex flex-col select-none">
+
+    <!-- TOP HEADER -->
+    <header class="h-14 border-b border-vaultBorder bg-vaultPanel px-4 flex items-center justify-between shrink-0 z-30">
+        <div class="flex items-center gap-3">
+            <button id="openSidebarMobile" class="md:hidden p-2 text-slate-400 hover:text-white rounded-lg bg-vaultCard border border-vaultBorder">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-neonBlue via-neonPurple to-neonPink flex items-center justify-center text-black font-black text-base shadow-lg shadow-neonBlue/20">
+                    ◈
+                </div>
+                <div>
+                    <h1 class="font-black text-sm tracking-wide text-white leading-none">PROJECT<span class="text-neonBlue">VAULT</span></h1>
+                    <span class="text-[9px] text-slate-400 tracking-wider uppercase font-semibold">Live Runner Edition</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEARCH BAR (MODAL / INLINE) -->
+        <div class="relative w-44 sm:w-80">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+            <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Search project, tech, tag (Ctrl+K)" class="w-full bg-vaultCard border border-vaultBorder rounded-xl pl-8 pr-8 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-neonBlue transition placeholder-slate-500">
+            <span class="hidden sm:block absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded font-mono border border-slate-700">Ctrl+K</span>
+        </div>
+
+        <!-- TOP RIGHT CONTROLS -->
+        <div class="flex items-center gap-2">
+            <button id="soundToggleBtn" onclick="toggleAudio()" title="Toggle Sound FX" class="p-2 text-slate-400 hover:text-white rounded-xl bg-vaultCard border border-vaultBorder text-xs transition">
+                <i class="fa-solid fa-volume-high text-neonBlue" id="soundIcon"></i>
+            </button>
+            
+            <button onclick="openNewProjectModal()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-neonBlue to-blue-600 text-black font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-neonBlue/20 hover:brightness-110 active:scale-95 transition">
+                <i class="fa-solid fa-plus text-black"></i> <span class="hidden sm:inline">New Project</span>
+            </button>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+
+        <!-- SIDEBAR -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-60 bg-vaultPanel border-r border-vaultBorder transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col justify-between pt-14 md:pt-0">
+            <div class="p-3 space-y-5 overflow-y-auto">
+                <!-- MAIN NAV -->
+                <div>
+                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 px-3">Views</div>
+                    <ul class="space-y-1">
+                        <li>
+                            <button onclick="switchView('all')" id="nav-all" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition bg-vaultBorder/50 text-neonBlue">
+                                <div class="flex items-center gap-2.5">
+                                    <i class="fa-solid fa-cubes w-4"></i>
+                                    <span>All Projects</span>
+                                </div>
+                                <span id="badge-all" class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full font-mono">0</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button onclick="switchView('favorites')" id="nav-favorites" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-100 hover:bg-vaultCard transition">
+                                <div class="flex items-center gap-2.5">
+                                    <i class="fa-solid fa-star text-amber-400 w-4"></i>
+                                    <span>Favorites</span>
+                                </div>
+                                <span id="badge-fav" class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full font-mono">0</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button onclick="switchView('trash')" id="nav-trash" class="nav-btn w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-100 hover:bg-vaultCard transition">
+                                <div class="flex items-center gap-2.5">
+                                    <i class="fa-solid fa-trash-can text-rose-400 w-4"></i>
+                                    <span>Trash Bin</span>
+                                </div>
+                                <span id="badge-trash" class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full font-mono">0</span>
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- CATEGORIES -->
+                <div>
+                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 px-3">Categories</div>
+                    <ul class="space-y-1" id="categoryNavList">
+                        <!-- Category Items Injected Here -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- SIDEBAR FOOTER (DATA UTILITIES) -->
+            <div class="p-3 border-t border-vaultBorder space-y-1.5 bg-vaultBg/40">
+                <div class="grid grid-cols-2 gap-1.5">
+                    <button onclick="exportData()" title="Export JSON" class="flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+                        <i class="fa-solid fa-download text-neonBlue"></i> Export
+                    </button>
+                    <label title="Import JSON" class="flex items-center justify-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 transition cursor-pointer">
+                        <i class="fa-solid fa-upload text-neonPurple"></i> Import
+                        <input type="file" id="importFileInput" onchange="importData(event)" class="hidden" accept=".json">
+                    </label>
+                </div>
+                <button onclick="resetDemoData()" title="Reset Sample Projects" class="w-full text-center text-[10px] text-slate-500 hover:text-rose-400 py-1 transition">
+                    <i class="fa-solid fa-rotate-left mr-1"></i> Reset Demo Projects
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN SCROLLABLE CONTENT -->
+        <main class="flex-1 overflow-y-auto md:ml-60 p-4 sm:p-6 space-y-5 bg-vaultBg">
+
+            <!-- STATS ROW -->
+            <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                <div class="bg-vaultCard border border-vaultBorder rounded-2xl p-3.5 flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Total Projects</p>
+                        <h3 id="statTotal" class="text-xl font-black text-white mt-0.5">0</h3>
+                    </div>
+                    <div class="w-9 h-9 rounded-xl bg-neonBlue/10 border border-neonBlue/20 text-neonBlue flex items-center justify-center">
+                        <i class="fa-solid fa-layer-group text-sm"></i>
+                    </div>
+                </div>
+
+                <div class="bg-vaultCard border border-vaultBorder rounded-2xl p-3.5 flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Completed</p>
+                        <h3 id="statCompleted" class="text-xl font-black text-neonGreen mt-0.5">0</h3>
+                    </div>
+                    <div class="w-9 h-9 rounded-xl bg-neonGreen/10 border border-neonGreen/20 text-neonGreen flex items-center justify-center">
+                        <i class="fa-solid fa-circle-check text-sm"></i>
+                    </div>
+                </div>
+
+                <div class="bg-vaultCard border border-vaultBorder rounded-2xl p-3.5 flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">In Progress</p>
+                        <h3 id="statInProgress" class="text-xl font-black text-amber-400 mt-0.5">0</h3>
+                    </div>
+                    <div class="w-9 h-9 rounded-xl bg-amber-400/10 border border-amber-400/20 text-amber-400 flex items-center justify-center">
+                        <i class="fa-solid fa-spinner text-sm"></i>
+                    </div>
+                </div>
+
+                <div class="bg-vaultCard border border-vaultBorder rounded-2xl p-3.5 flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Favorites</p>
+                        <h3 id="statFavorites" class="text-xl font-black text-neonPurple mt-0.5">0</h3>
+                    </div>
+                    <div class="w-9 h-9 rounded-xl bg-neonPurple/10 border border-neonPurple/20 text-neonPurple flex items-center justify-center">
+                        <i class="fa-solid fa-star text-sm"></i>
+                    </div>
+                </div>
+
+                <div class="col-span-2 lg:col-span-1 bg-vaultCard border border-vaultBorder rounded-2xl p-3.5 flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Code Volume</p>
+                        <h3 id="statCodeSize" class="text-xl font-black text-neonPink mt-0.5">0 KB</h3>
+                    </div>
+                    <div class="w-9 h-9 rounded-xl bg-neonPink/10 border border-neonPink/20 text-neonPink flex items-center justify-center">
+                        <i class="fa-solid fa-code text-sm"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTROLS ROW -->
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-vaultBorder/60 pb-3">
+                <div>
+                    <h2 id="viewTitle" class="text-lg font-extrabold text-white flex items-center gap-2">
+                        <span>All Projects</span>
+                    </h2>
+                    <p id="viewSubtitle" class="text-xs text-slate-400">All saved HTML, CSS, and JS projects inside your vault.</p>
+                </div>
+
+                <!-- FILTERS -->
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <select id="statusFilter" onchange="renderProjects()" class="bg-vaultCard border border-vaultBorder rounded-xl px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-neonBlue cursor-pointer">
+                        <option value="ALL">All Status</option>
+                        <option value="Completed">Completed 🟢</option>
+                        <option value="In Progress">In Progress 🟡</option>
+                        <option value="Draft">Draft ⚪</option>
+                    </select>
+
+                    <select id="sortFilter" onchange="renderProjects()" class="bg-vaultCard border border-vaultBorder rounded-xl px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-neonBlue cursor-pointer">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="alpha">Alphabetical (A-Z)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- PROJECTS CARDS GRID -->
+            <div id="projectsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <!-- Cards Injected via JS -->
+            </div>
+
+            <!-- EMPTY STATE -->
+            <div id="emptyState" class="hidden flex-col items-center justify-center py-16 text-center space-y-3">
+                <div class="w-14 h-14 rounded-2xl bg-vaultCard border border-vaultBorder flex items-center justify-center text-slate-500 text-2xl">
+                    <i class="fa-solid fa-box-open"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white">No Projects Found</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Try adjusting your search keyword or active filter category.</p>
+                </div>
+                <button onclick="openNewProjectModal()" class="px-4 py-2 bg-neonBlue/10 text-neonBlue text-xs font-semibold rounded-xl border border-neonBlue/30 hover:bg-neonBlue/20 transition">
+                    <i class="fa-solid fa-plus mr-1"></i> Add New Project
+                </button>
+            </div>
+
+        </main>
+    </div>
+
+    
+    <!-- 1. LIVE RUNNER & SPLIT EDITOR MODAL -->
+    <div id="runnerModal" class="fixed inset-0 z-50 hidden bg-black/90 backdrop-blur-md flex flex-col overflow-hidden">
+        
+        <!-- Runner Topbar -->
+        <div class="h-12 border-b border-vaultBorder bg-vaultPanel px-4 flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+                <button onclick="closeRunnerModal()" class="text-slate-400 hover:text-white px-2 py-1 rounded bg-slate-800 text-xs transition">
+                    <i class="fa-solid fa-xmark mr-1"></i> Close Runner
+                </button>
+                <div class="h-4 w-px bg-vaultBorder"></div>
+                <h3 id="runnerTitle" class="font-bold text-xs sm:text-sm text-white flex items-center gap-2">
+                    <i class="fa-solid fa-play text-neonGreen"></i> Project Live Runner
+                </h3>
+            </div>
+
+            <!-- Resolution Controls & Actions -->
+            <div class="flex items-center gap-2">
+                <!-- Device View Switcher -->
+                <div class="hidden sm:flex items-center bg-vaultCard border border-vaultBorder rounded-lg p-0.5 text-xs">
+                    <button onclick="setRunnerViewport('full')" id="view-full" class="px-2 py-1 rounded text-neonBlue font-semibold bg-vaultBorder">Full</button>
+                    <button onclick="setRunnerViewport('tablet')" id="view-tablet" class="px-2 py-1 rounded text-slate-400 hover:text-white">Tablet</button>
+                    <button onclick="setRunnerViewport('mobile')" id="view-mobile" class="px-2 py-1 rounded text-slate-400 hover:text-white">Mobile</button>
+                </div>
+
+                <button onclick="toggleSplitEditor()" id="splitEditorBtn" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+                    <i class="fa-solid fa-code text-neonPurple mr-1"></i> Toggle Code Editor
+                </button>
+
+                <button onclick="exportStandaloneHTML(currentRunnerId)" title="Export as Standalone HTML File" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-700 transition">
+                    <i class="fa-solid fa-file-export mr-1"></i> Export HTML File
+                </button>
+            </div>
+        </div>
+
+        <!-- Runner Main Content Area -->
+        <div class="flex-1 flex overflow-hidden bg-black relative">
+            
+            <!-- SPLIT CODE EDITOR SIDEBAR (TOGGLEABLE) -->
+            <div id="splitEditorContainer" class="w-full md:w-1/2 border-r border-vaultBorder bg-vaultCard flex flex-col hidden">
+                <div class="flex items-center justify-between border-b border-vaultBorder px-3 py-2 bg-vaultPanel">
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="switchSplitTab('html')" id="split-tab-html" class="px-2.5 py-1 rounded text-xs font-mono font-semibold tab-active">HTML</button>
+                        <button onclick="switchSplitTab('css')" id="split-tab-css" class="px-2.5 py-1 rounded text-xs font-mono font-semibold text-slate-400 hover:text-white">CSS</button>
+                        <button onclick="switchSplitTab('js')" id="split-tab-js" class="px-2.5 py-1 rounded text-xs font-mono font-semibold text-slate-400 hover:text-white">JS</button>
+                    </div>
+                    <button onclick="applySplitCodeChanges()" class="px-3 py-1 bg-neonGreen text-black font-bold text-xs rounded-lg hover:brightness-110 transition shadow">
+                        <i class="fa-solid fa-rotate-right mr-1"></i> Apply & Run
+                    </button>
+                </div>
+
+                <div class="flex-1 p-2 bg-[#09090b]">
+                    <textarea id="splitHtmlText" oninput="liveUpdateRunner()" class="w-full h-full font-mono text-xs bg-[#09090B] text-amber-200 p-3 focus:outline-none resize-none editor-bg border border-vaultBorder/50 rounded-lg"></textarea>
+                    <textarea id="splitCssText" oninput="liveUpdateRunner()" class="w-full h-full font-mono text-xs bg-[#09090B] text-blue-200 p-3 focus:outline-none resize-none editor-bg border border-vaultBorder/50 rounded-lg hidden"></textarea>
+                    <textarea id="splitJsText" oninput="liveUpdateRunner()" class="w-full h-full font-mono text-xs bg-[#09090B] text-emerald-200 p-3 focus:outline-none resize-none editor-bg border border-vaultBorder/50 rounded-lg hidden"></textarea>
+                </div>
+            </div>
+
+            <!-- IFRAME PREVIEW CONTAINER -->
+            <div class="flex-1 flex flex-col items-center justify-center p-2 bg-[#050507] overflow-hidden relative">
+                <div id="iframeFrame" class="w-full h-full transition-all duration-300 border border-vaultBorder/40 rounded-xl overflow-hidden bg-white">
+                    <iframe id="livePreviewIframe" class="w-full h-full border-0" sandbox="allow-scripts allow-modals allow-same-origin"></iframe>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONSOLE LOGGER PANEL -->
+        <div class="h-28 border-t border-vaultBorder bg-[#09090b] px-4 py-2 flex flex-col shrink-0 font-mono text-xs">
+            <div class="flex items-center justify-between pb-1 border-b border-vaultBorder/50 text-slate-400">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-neonBlue flex items-center gap-1.5">
+                    <i class="fa-solid fa-terminal"></i> Live Console Output
+                </span>
+                <button onclick="clearRunnerConsole()" class="text-[10px] hover:text-white">Clear Console</button>
+            </div>
+            <div id="runnerConsoleLog" class="flex-1 overflow-y-auto py-1 space-y-1 text-slate-300">
+                <div class="text-slate-600 italic">[Runner ready. Console logs will appear here...]</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. CREATE / EDIT PROJECT MODAL -->
+    <div id="projectModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div class="bg-vaultCard border border-vaultBorder rounded-2xl w-full max-w-2xl max-h-[92vh] flex flex-col shadow-2xl relative my-auto overflow-hidden">
+            
+            <div class="px-5 py-3.5 border-b border-vaultBorder flex items-center justify-between bg-vaultPanel">
+                <h3 id="modalTitle" class="text-sm font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-file-circle-plus text-neonBlue"></i> Create New Web Project
+                </h3>
+                <button onclick="closeProjectModal()" class="text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form id="projectForm" onsubmit="saveProject(event)" class="p-5 overflow-y-auto space-y-4 flex-1">
+                <input type="hidden" id="formProjectId">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Project Name *</label>
+                        <input type="text" id="formTitle" required placeholder="e.g. Solar System 3D Explorer" class="w-full bg-[#09090B] border border-vaultBorder rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-neonBlue transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Category *</label>
+                        <select id="formCategory" required class="w-full bg-[#09090B] border border-vaultBorder rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-neonBlue transition">
+                            <option value="Website">Website</option>
+                            <option value="Game">Game</option>
+                            <option value="App">App</option>
+                            <option value="Blog">Blog</option>
+                            <option value="School">School</option>
+                            <option value="Portfolio">Portfolio</option>
+                            <option value="Tool">Tool</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Description</label>
+                    <textarea id="formDescription" rows="2" placeholder="Short description about the project features..." class="w-full bg-[#09090B] border border-vaultBorder rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-neonBlue transition"></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Status</label>
+                        <select id="formStatus" class="w-full bg-[#09090B] border border-vaultBorder rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-neonBlue transition">
+                            <option value="Completed">Completed 🟢</option>
+                            <option value="In Progress">In Progress 🟡</option>
+                            <option value="Draft">Draft ⚪</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Tech Stack (comma separated)</label>
+                        <input type="text" id="formTech" placeholder="HTML, Canvas, Tailwind" class="w-full bg-[#09090B] border border-vaultBorder rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-neonBlue transition">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Live URL (Optional)</label>
+                        <input type="url" id="formLiveUrl" placeholder="https://demo.vercel.app" class="w-full bg-[#09090B] border border-vaultBorder rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-neonBlue transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">GitHub Repo URL (Optional)</label>
+                        <input type="url" id="formGithubUrl" placeholder="https://github.com/user/repo" class="w-full bg-[#09090B] border border-vaultBorder rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-neonBlue transition">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Screenshot Thumbnail</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="formImage" placeholder="Image URL or Base64 uploaded" class="flex-1 bg-[#09090B] border border-vaultBorder rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-neonBlue transition">
+                        <label class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 cursor-pointer flex items-center gap-1 shrink-0 transition">
+                            <i class="fa-solid fa-image text-neonBlue"></i> Upload
+                            <input type="file" id="fileImageInput" accept="image/*" onchange="handleImageUpload(event)" class="hidden">
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Tags (comma separated)</label>
+                    <input type="text" id="formTags" placeholder="school, game, 3d" class="w-full bg-[#09090B] border border-vaultBorder rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-neonBlue transition">
+                </div>
+
+                <!-- CODE SNIPPETS INPUT -->
+                <div class="space-y-3 pt-2 border-t border-vaultBorder">
+                    <p class="text-xs font-bold uppercase tracking-wider text-neonPurple">Source Code Snippets (For Live Runner)</p>
+                    <div>
+                        <label class="block text-xs font-mono text-amber-300 mb-1">HTML Code</label>
+                        <textarea id="formHtmlCode" rows="3" placeholder="<!-- HTML structure -->" class="w-full font-mono text-xs bg-[#09090B] border border-vaultBorder rounded-xl p-2.5 text-amber-200 focus:outline-none focus:border-neonBlue transition"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-mono text-blue-300 mb-1">CSS Code</label>
+                        <textarea id="formCssCode" rows="3" placeholder="/* Custom CSS */" class="w-full font-mono text-xs bg-[#09090B] border border-vaultBorder rounded-xl p-2.5 text-blue-200 focus:outline-none focus:border-neonBlue transition"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-mono text-emerald-300 mb-1">JavaScript Code</label>
+                        <textarea id="formJsCode" rows="3" placeholder="// JavaScript logic" class="w-full font-mono text-xs bg-[#09090B] border border-vaultBorder rounded-xl p-2.5 text-emerald-200 focus:outline-none focus:border-neonBlue transition"></textarea>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Documentation & Notes</label>
+                    <textarea id="formNotes" rows="2" placeholder="Development logs, ideas, or how to run..." class="w-full bg-[#09090B] border border-vaultBorder rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-neonBlue transition"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-3 border-t border-vaultBorder">
+                    <button type="button" onclick="closeProjectModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">Cancel</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-neonBlue to-blue-600 text-black font-bold shadow-lg shadow-neonBlue/20 hover:brightness-110 transition">Save Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. PROJECT DETAIL MODAL -->
+    <div id="detailModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+        <div class="bg-vaultCard border border-vaultBorder rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl relative my-auto overflow-hidden">
+            
+            <div class="px-5 py-3 border-b border-vaultBorder flex items-center justify-between bg-vaultPanel">
+                <div class="flex items-center gap-3">
+                    <button onclick="closeDetailModal()" class="text-slate-400 hover:text-white transition text-xs flex items-center gap-1 bg-slate-800 px-2.5 py-1 rounded-lg">
+                        <i class="fa-solid fa-arrow-left"></i> Back
+                    </button>
+                    <span id="detailCategoryBadge" class="text-[10px] font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-neonBlue/10 text-neonBlue border border-neonBlue/20">Category</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="detailRunBtn" class="px-3 py-1.5 rounded-xl bg-neonGreen text-black font-extrabold text-xs flex items-center gap-1.5 shadow hover:brightness-110 transition">
+                        <i class="fa-solid fa-play"></i> Run Live
+                    </button>
+                    <button id="detailFavBtn" onclick="toggleFavoriteCurrentDetail()" class="text-slate-400 hover:text-amber-400 px-2.5 py-1.5 rounded-xl border border-vaultBorder bg-slate-800/50 text-xs transition">
+                        <i class="fa-solid fa-star"></i>
+                    </button>
+                    <button id="detailEditBtn" class="text-slate-300 hover:text-white px-3 py-1.5 rounded-xl border border-vaultBorder bg-slate-800/50 text-xs font-semibold transition">
+                        <i class="fa-solid fa-pen-to-square mr-1"></i> Edit
+                    </button>
+                    <button onclick="closeDetailModal()" class="text-slate-400 hover:text-white transition ml-1">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-5 flex-1">
+                <div class="space-y-2">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <h2 id="detailTitle" class="text-2xl font-extrabold text-white">Project Title</h2>
+                        <span id="detailStatusPill" class="text-xs font-semibold px-3 py-1 rounded-full bg-neonGreen/10 text-neonGreen border border-neonGreen/20">Completed</span>
+                    </div>
+                    <p id="detailDescription" class="text-xs sm:text-sm text-slate-300 leading-relaxed">Description...</p>
+                    
+                    <div class="flex flex-wrap items-center gap-2 pt-1">
+                        <div id="detailTechStack" class="flex flex-wrap gap-1.5"></div>
+                        <div id="detailTags" class="flex flex-wrap gap-1.5 border-l border-vaultBorder pl-2"></div>
+                    </div>
+                </div>
+
+                <div class="relative group rounded-2xl overflow-hidden border border-vaultBorder bg-black/50 min-h-[180px] max-h-[300px] flex items-center justify-center">
+                    <img id="detailImage" src="" alt="Project Screenshot" class="w-full h-full object-cover max-h-[300px]">
+                </div>
+
+                <!-- Code View Tabs -->
+                <div class="border border-vaultBorder rounded-2xl bg-[#0d0f14] overflow-hidden">
+                    <div class="flex items-center justify-between border-b border-vaultBorder px-4 py-2 bg-vaultCard">
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="switchCodeTab('html')" id="tab-html" class="code-tab-btn px-3 py-1 rounded-lg text-xs font-mono font-semibold bg-vaultBorder text-amber-300">HTML</button>
+                            <button onclick="switchCodeTab('css')" id="tab-css" class="code-tab-btn px-3 py-1 rounded-lg text-xs font-mono font-semibold text-slate-400 hover:text-white">CSS</button>
+                            <button onclick="switchCodeTab('js')" id="tab-js" class="code-tab-btn px-3 py-1 rounded-lg text-xs font-mono font-semibold text-slate-400 hover:text-white">JS</button>
+                        </div>
+                        <button onclick="copyCurrentCode()" class="text-xs text-slate-400 hover:text-neonBlue transition flex items-center gap-1">
+                            <i class="fa-regular fa-copy"></i> Copy Snippet
+                        </button>
+                    </div>
+                    <div class="p-4 overflow-x-auto max-h-56 font-mono text-xs text-slate-300 bg-[#09090b]">
+                        <pre id="codeDisplay"><code><!-- Code snippet --></code></pre>
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-2xl border border-vaultBorder bg-vaultCard/50 space-y-1.5">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                        <i class="fa-regular fa-note-sticky text-neonPurple"></i> Developer Notes
+                    </h4>
+                    <p id="detailNotes" class="text-xs text-slate-300 whitespace-pre-line leading-relaxed">No notes added.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // WEB AUDIO SOUND EFFECTS
+        let audioEnabled = true;
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (!audioEnabled || !audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.05);
+                } else if (type === 'run') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.15);
+                }
+            } catch (e) {}
+        }
+
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            document.getElementById('soundIcon').className = audioEnabled ? 'fa-solid fa-volume-high text-neonBlue' : 'fa-solid fa-volume-xmark text-slate-500';
+        }
+
+        // DEFAULT WORKING SAMPLE DEMO PROJECTS
+        const DEFAULT_PROJECTS = [
+            {
+                id: 'proj-solar-3d',
+                title: 'Solar System 3D Planet Explorer',
+                description: 'Interactive canvas 3D simulation of planets orbiting the sun with glowing effects.',
+                category: 'Website',
+                status: 'Completed',
+                createdDate: '2026-09-20',
+                liveUrl: '',
+                githubUrl: '',
+                techStack: ['HTML5 Canvas', 'JavaScript', 'CSS3'],
+                tags: ['solar', 'canvas', '3d', 'interactive'],
+                image: 'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?auto=format&fit=crop&w=600&q=80',
+                favorite: true,
+                trashed: false,
+                htmlCode: `<div class="container">
+  <h2>Solar System 3D Orbit</h2>
+  <p>Click and drag or hover over planets!</p>
+  <canvas id="solarCanvas" width="600" height="400"></canvas>
+</div>`,
+                cssCode: `body {
+  margin: 0;
+  background: #050508;
+  color: #00f0ff;
+  font-family: sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-h: 100vh;
+}
+.container { text-align: center; }
+canvas {
+  border: 2px solid #00f0ff;
+  border-radius: 16px;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+  background: radial-gradient(circle at center, #111325 0%, #000 100%);
+}`,
+                jsCode: `const canvas = document.getElementById('solarCanvas');
+const ctx = canvas.getContext('2d');
+let angle = 0;
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+
+  // Sun
+  ctx.beginPath();
+  ctx.arc(cx, cy, 25, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffb700';
+  ctx.shadowBlur = 25;
+  ctx.shadowColor = '#ffb700';
+  ctx.fill();
+
+  // Planet 1 (Blue)
+  const x1 = cx + Math.cos(angle) * 80;
+  const y1 = cy + Math.sin(angle) * 50;
+  ctx.beginPath();
+  ctx.arc(x1, y1, 10, 0, Math.PI * 2);
+  ctx.fillStyle = '#00f0ff';
+  ctx.shadowColor = '#00f0ff';
+  ctx.fill();
+
+  // Planet 2 (Pink)
+  const x2 = cx + Math.cos(-angle * 0.7) * 140;
+  const y2 = cy + Math.sin(-angle * 0.7) * 90;
+  ctx.beginPath();
+  ctx.arc(x2, y2, 14, 0, Math.PI * 2);
+  ctx.fillStyle = '#ff007f';
+  ctx.shadowColor = '#ff007f';
+  ctx.fill();
+
+  angle += 0.02;
+  requestAnimationFrame(draw);
+}
+draw();
+console.log("Solar System Orbit Simulator Running...");`,
+                notes: 'Built with HTML5 Canvas API. Uses glowing shadows for celestial lights.'
+            },
+            {
+                id: 'proj-cyber-clock',
+                title: 'Cyberpunk Neon Stopwatch Widget',
+                description: 'Futuristic glowing digital timer with lap logging and sound ticks.',
+                category: 'Tool',
+                status: 'Completed',
+                createdDate: '2026-09-25',
+                liveUrl: '',
+                githubUrl: '',
+                techStack: ['HTML', 'CSS Neon', 'JS Timer'],
+                tags: ['widget', 'timer', 'neon', 'cyberpunk'],
+                image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=600&q=80',
+                favorite: true,
+                trashed: false,
+                htmlCode: `<div class="clock-card">
+  <div class="glow-title">CYBERPUNK TIMER</div>
+  <div id="display" class="timer-display">00:00:00</div>
+  <div class="btn-group">
+    <button onclick="startTimer()">START</button>
+    <button onclick="stopTimer()">STOP</button>
+    <button onclick="resetTimer()">RESET</button>
+  </div>
+</div>`,
+                cssCode: `body {
+  background: #09090b;
+  color: #fff;
+  font-family: monospace;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+.clock-card {
+  background: #111318;
+  border: 1px solid #7000ff;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 0 25px rgba(112, 0, 255, 0.4);
+  text-align: center;
+}
+.glow-title { color: #00ff88; letter-spacing: 2px; font-weight: bold; }
+.timer-display {
+  font-size: 3rem;
+  margin: 20px 0;
+  color: #00f0ff;
+  text-shadow: 0 0 10px #00f0ff;
+}
+button {
+  background: #272A33;
+  color: #fff;
+  border: 1px solid #7000ff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin: 0 4px;
+}
+button:hover { background: #7000ff; }`,
+                jsCode: `let seconds = 0, timer = null;
+function updateDisplay() {
+  const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+  const s = String(seconds % 60).padStart(2, '0');
+  document.getElementById('display').innerText = \`00:\${m}:\${s}\`;
+}
+function startTimer() {
+  if (!timer) {
+    timer = setInterval(() => { seconds++; updateDisplay(); }, 1000);
+    console.log("Timer started");
+  }
+}
+function stopTimer() { clearInterval(timer); timer = null; console.log("Timer stopped"); }
+function resetTimer() { stopTimer(); seconds = 0; updateDisplay(); console.log("Timer reset"); }`,
+                notes: 'Neon styled timer component.'
+            }
+        ];
+
+        // GLOBAL APP STATE
+        let projects = [];
+        let currentView = 'all';
+        let currentDetailId = null;
+        let currentRunnerId = null;
+        let splitTab = 'html';
+
+        // APP INITIALIZATION
+        window.onload = function() {
+            loadProjects();
+            renderCategories();
+            renderProjects();
+            setupKeyboardShortcuts();
+            setupMobileSidebar();
+        };
+
+        function loadProjects() {
+            const saved = localStorage.getItem('web_vault_projects_v2');
+            if (saved) {
+                try { projects = JSON.parse(saved); } catch (e) { projects = [...DEFAULT_PROJECTS]; }
+            } else {
+                projects = [...DEFAULT_PROJECTS];
+                saveToStorage();
+            }
+        }
+
+        function saveToStorage() {
+            localStorage.setItem('web_vault_projects_v2', JSON.stringify(projects));
+            updateStats();
+        }
+
+        function resetDemoData() {
+            if (confirm("Reset all projects back to default sample projects?")) {
+                projects = [...DEFAULT_PROJECTS];
+                saveToStorage();
+                renderProjects();
+            }
+        }
+
+        // CATEGORY CONSTANTS
+        const CATEGORIES = ['Website', 'Game', 'App', 'Blog', 'School', 'Portfolio', 'Tool', 'Other'];
+
+        function renderCategories() {
+            const list = document.getElementById('categoryNavList');
+            list.innerHTML = CATEGORIES.map(cat => {
+                const count = projects.filter(p => !p.trashed && p.category === cat).length;
+                return `
+                    <li>
+                        <button onclick="switchView('cat-${cat}')" id="nav-cat-${cat}" class="nav-btn w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-100 hover:bg-vaultCard transition">
+                            <div class="flex items-center gap-2">
+                                <i class="${getCategoryIcon(cat)} w-4 text-slate-500"></i>
+                                <span>${cat}</span>
+                            </div>
+                            <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-mono">${count}</span>
+                        </button>
+                    </li>
+                `;
+            }).join('');
+        }
+
+        function getCategoryIcon(cat) {
+            switch(cat) {
+                case 'Website': return 'fa-solid fa-globe';
+                case 'Game': return 'fa-solid fa-gamepad';
+                case 'App': return 'fa-solid fa-mobile-screen-button';
+                case 'Blog': return 'fa-solid fa-newspaper';
+                case 'School': return 'fa-solid fa-graduation-cap';
+                case 'Portfolio': return 'fa-solid fa-briefcase';
+                case 'Tool': return 'fa-solid fa-wrench';
+                default: return 'fa-solid fa-folder';
+            }
+        }
+
+        function updateStats() {
+            const active = projects.filter(p => !p.trashed);
+            document.getElementById('statTotal').innerText = active.length;
+            document.getElementById('statCompleted').innerText = active.filter(p => p.status === 'Completed').length;
+            document.getElementById('statInProgress').innerText = active.filter(p => p.status === 'In Progress').length;
+            document.getElementById('statFavorites').innerText = active.filter(p => p.favorite).length;
+
+            // Calculate total code KB size
+            const totalChars = active.reduce((acc, p) => acc + (p.htmlCode || '').length + (p.cssCode || '').length + (p.jsCode || '').length, 0);
+            document.getElementById('statCodeSize').innerText = (totalChars / 1024).toFixed(1) + ' KB';
+
+            document.getElementById('badge-all').innerText = active.length;
+            document.getElementById('badge-fav').innerText = active.filter(p => p.favorite).length;
+            document.getElementById('badge-trash').innerText = projects.filter(p => p.trashed).length;
+
+            renderCategories();
+        }
+
+        // VIEW SWITCHER
+        function switchView(viewKey) {
+            playSound('click');
+            currentView = viewKey;
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-vaultBorder/50', 'text-neonBlue');
+                btn.classList.add('text-slate-400');
+            });
+
+            const activeBtn = document.getElementById(`nav-${viewKey}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-vaultBorder/50', 'text-neonBlue');
+                activeBtn.classList.remove('text-slate-400');
+            }
+
+            const titleEl = document.getElementById('viewTitle');
+            const subTitleEl = document.getElementById('viewSubtitle');
+
+            if (viewKey === 'all') {
+                titleEl.innerHTML = `<span>All Projects</span>`;
+                subTitleEl.innerText = 'All saved HTML, CSS, and JS projects inside your vault.';
+            } else if (viewKey === 'favorites') {
+                titleEl.innerHTML = `<i class="fa-solid fa-star text-amber-400 mr-2"></i> Favorites`;
+                subTitleEl.innerText = 'Starred projects for quick access.';
+            } else if (viewKey === 'trash') {
+                titleEl.innerHTML = `<i class="fa-solid fa-trash-can text-rose-400 mr-2"></i> Trash Bin`;
+                subTitleEl.innerText = 'Deleted items stored here. Restore or permanently erase.';
+            } else if (viewKey.startsWith('cat-')) {
+                const cat = viewKey.replace('cat-', '');
+                titleEl.innerHTML = `<i class="${getCategoryIcon(cat)} text-neonBlue mr-2"></i> Category: ${cat}`;
+                subTitleEl.innerText = `Projects categorized under ${cat}.`;
+            }
+
+            renderProjects();
+        }
+
+        function renderProjects() {
+            const grid = document.getElementById('projectsGrid');
+            const empty = document.getElementById('emptyState');
+            const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
+            const statusVal = document.getElementById('statusFilter').value;
+            const sortVal = document.getElementById('sortFilter').value;
+
+            let filtered = projects.filter(p => {
+                if (currentView === 'trash') {
+                    if (!p.trashed) return false;
+                } else {
+                    if (p.trashed) return false;
+                }
+
+                if (currentView === 'favorites' && !p.favorite) return false;
+
+                if (currentView.startsWith('cat-')) {
+                    const cat = currentView.replace('cat-', '');
+                    if (p.category !== cat) return false;
+                }
+
+                if (statusVal !== 'ALL' && p.status !== statusVal) return false;
+
+                if (searchVal) {
+                    const matchTitle = p.title.toLowerCase().includes(searchVal);
+                    const matchDesc = p.description.toLowerCase().includes(searchVal);
+                    const matchTech = p.techStack.some(t => t.toLowerCase().includes(searchVal));
+                    const matchTags = p.tags.some(t => t.toLowerCase().includes(searchVal));
+                    return matchTitle || matchDesc || matchTech || matchTags;
+                }
+
+                return true;
+            });
+
+            if (sortVal === 'newest') {
+                filtered.sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
+            } else if (sortVal === 'oldest') {
+                filtered.sort((a, b) => new Date(a.createdDate) - new Date(b.createdDate));
+            } else if (sortVal === 'alpha') {
+                filtered.sort((a, b) => a.title.localeCompare(b.title));
+            }
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                empty.classList.remove('hidden');
+                empty.classList.add('flex');
+            } else {
+                empty.classList.add('hidden');
+                empty.classList.remove('flex');
+
+                grid.innerHTML = filtered.map(p => {
+                    const isTrash = currentView === 'trash';
+                    const fallbackImg = `https://placehold.co/600x360/111318/00f0ff?text=${encodeURIComponent(p.title)}`;
+
+                    return `
+                        <div class="card-lift bg-vaultCard border border-vaultBorder rounded-2xl overflow-hidden flex flex-col justify-between group">
+                            <div>
+                                <!-- Image Preview & Live Overlay -->
+                                <div class="relative h-36 w-full bg-slate-900 overflow-hidden">
+                                    <img src="${p.image || fallbackImg}" onerror="this.src='${fallbackImg}'" alt="${p.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                                    
+                                    <div class="absolute top-2.5 left-2.5">
+                                        <span class="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-md text-neonBlue border border-neonBlue/30">
+                                            <i class="${getCategoryIcon(p.category)} mr-1"></i> ${p.category}
+                                        </span>
+                                    </div>
+
+                                    ${!isTrash ? `
+                                        <button onclick="toggleFavorite('${p.id}')" class="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-black/70 backdrop-blur-md flex items-center justify-center transition hover:scale-110">
+                                            <i class="fa-solid fa-star text-xs ${p.favorite ? 'text-amber-400' : 'text-slate-500'}"></i>
+                                        </button>
+
+                                        <!-- Quick Run Play Overlay Button -->
+                                        <button onclick="openRunnerModal('${p.id}')" class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                            <span class="px-3 py-1.5 rounded-xl bg-neonGreen text-black font-extrabold text-xs flex items-center gap-1.5 shadow-lg shadow-neonGreen/30 transform scale-95 group-hover:scale-100 transition">
+                                                <i class="fa-solid fa-play"></i> RUN LIVE
+                                            </span>
+                                        </button>
+                                    ` : ''}
+                                </div>
+
+                                <!-- Body -->
+                                <div class="p-3.5 space-y-2">
+                                    <div>
+                                        <h3 onclick="openDetailModal('${p.id}')" class="font-bold text-white text-sm hover:text-neonBlue transition cursor-pointer line-clamp-1">${p.title}</h3>
+                                        <p class="text-[11px] text-slate-400 line-clamp-2 mt-0.5">${p.description || 'No description.'}</p>
+                                    </div>
+
+                                    <div class="flex flex-wrap gap-1">
+                                        ${p.tags.map(t => `<span class="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">#${t}</span>`).join('')}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card Footer -->
+                            <div class="p-3.5 pt-0 border-t border-vaultBorder/40 mt-2 flex items-center justify-between pt-2.5">
+                                <div>${getStatusBadge(p.status)}</div>
+
+                                <div class="flex items-center gap-1">
+                                    ${!isTrash ? `
+                                        <button onclick="openRunnerModal('${p.id}')" title="Run Live" class="p-1.5 text-xs text-neonGreen hover:scale-110 transition"><i class="fa-solid fa-play"></i></button>
+                                        <button onclick="openDetailModal('${p.id}')" title="Details" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-lg border border-slate-700 transition">View</button>
+                                        <button onclick="duplicateProject('${p.id}')" title="Duplicate Project" class="p-1.5 text-xs text-slate-400 hover:text-neonPurple transition"><i class="fa-regular fa-copy"></i></button>
+                                        <button onclick="openEditModal('${p.id}')" title="Edit" class="p-1.5 text-xs text-slate-400 hover:text-white transition"><i class="fa-solid fa-pen-to-square"></i></button>
+                                        <button onclick="moveToTrash('${p.id}')" title="Trash" class="p-1.5 text-xs text-slate-400 hover:text-rose-400 transition"><i class="fa-solid fa-trash-can"></i></button>
+                                    ` : `
+                                        <button onclick="restoreFromTrash('${p.id}')" class="px-2 py-1 bg-emerald-950 text-emerald-300 text-[11px] font-semibold rounded-lg border border-emerald-800 transition">Restore</button>
+                                        <button onclick="deletePermanently('${p.id}')" class="p-1.5 text-xs text-rose-400 hover:text-rose-300 transition"><i class="fa-solid fa-xmark"></i></button>
+                                    `}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            updateStats();
+        }
+
+        function getStatusBadge(status) {
+            if (status === 'Completed') {
+                return `<span class="text-[9px] font-bold text-neonGreen bg-neonGreen/10 border border-neonGreen/20 px-2 py-0.5 rounded-full">Completed 🟢</span>`;
+            } else if (status === 'In Progress') {
+                return `<span class="text-[9px] font-bold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full">In Progress 🟡</span>`;
+            } else {
+                return `<span class="text-[9px] font-bold text-slate-400 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded-full">Draft ⚪</span>`;
+            }
+        }
+
+        function handleSearch() {
+            renderProjects();
+        }
+
+        // LIVE RUNNER ENGINE & CONSOLE LOGIC
+        function openRunnerModal(id) {
+            playSound('run');
+            const p = projects.find(item => item.id === id);
+            if (!p) return;
+
+            currentRunnerId = id;
+            document.getElementById('runnerTitle').innerHTML = `<i class="fa-solid fa-play text-neonGreen mr-1.5"></i> ${p.title}`;
+            
+            // Populate Split Editor
+            document.getElementById('splitHtmlText').value = p.htmlCode || '';
+            document.getElementById('splitCssText').value = p.cssCode || '';
+            document.getElementById('splitJsText').value = p.jsCode || '';
+
+            document.getElementById('runnerModal').classList.remove('hidden');
+            compileAndRunIframe(p.htmlCode, p.cssCode, p.jsCode);
+        }
+
+        function closeRunnerModal() {
+            playSound('click');
+            document.getElementById('runnerModal').classList.add('hidden');
+            document.getElementById('livePreviewIframe').srcdoc = '';
+            currentRunnerId = null;
+        }
+
+        function compileAndRunIframe(html, css, js) {
+            const consoleLogArea = document.getElementById('runnerConsoleLog');
+            consoleLogArea.innerHTML = `<div class="text-slate-600 italic">[Runner compiled at ${new Date().toLocaleTimeString()}]</div>`;
+
+            // Custom Console Interceptor Script
+            const consoleInterceptor = `
+            <script>
+                (function() {
+                    const _log = console.log;
+                    const _error = console.error;
+                    console.log = function(...args) {
+                        _log(...args);
+                        window.parent.postMessage({ type: 'CONSOLE_LOG', data: args.join(' ') }, '*');
+                    };
+                    console.error = function(...args) {
+                        _error(...args);
+                        window.parent.postMessage({ type: 'CONSOLE_ERROR', data: args.join(' ') }, '*');
+                    };
+                })();
+            <\/script>`;
+
+            const combinedDoc = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>${css || ''}</style>
+                    ${consoleInterceptor}
+                </head>
+                <body>
+                    ${html || ''}
+                    <script>${js || ''}<\/script>
+                </body>
+                </html>
+            `;
+
+            document.getElementById('livePreviewIframe').srcdoc = combinedDoc;
+        }
+
+        // Listen for internal console log messages from iframe
+        window.addEventListener('message', function(event) {
+            if (event.data && (event.data.type === 'CONSOLE_LOG' || event.data.type === 'CONSOLE_ERROR')) {
+                const area = document.getElementById('runnerConsoleLog');
+                const isError = event.data.type === 'CONSOLE_ERROR';
+                const div = document.createElement('div');
+                div.className = isError ? 'text-rose-400 font-semibold' : 'text-emerald-400';
+                div.innerText = `> ${event.data.data}`;
+                area.appendChild(div);
+                area.scrollTop = area.scrollHeight;
+            }
+        });
+
+        function clearRunnerConsole() {
+            document.getElementById('runnerConsoleLog').innerHTML = `<div class="text-slate-600 italic">[Console cleared]</div>`;
+        }
+
+        function setRunnerViewport(mode) {
+            const frame = document.getElementById('iframeFrame');
+            document.querySelectorAll('[id^="view-"]').forEach(btn => {
+                btn.classList.remove('bg-vaultBorder', 'text-neonBlue');
+                btn.classList.add('text-slate-400');
+            });
+
+            document.getElementById(`view-${mode}`).classList.add('bg-vaultBorder', 'text-neonBlue');
+
+            if (mode === 'mobile') {
+                frame.style.width = '375px';
+                frame.style.height = '667px';
+            } else if (mode === 'tablet') {
+                frame.style.width = '768px';
+                frame.style.height = '90%';
+            } else {
+                frame.style.width = '100%';
+                frame.style.height = '100%';
+            }
+        }
+
+        function toggleSplitEditor() {
+            const container = document.getElementById('splitEditorContainer');
+            container.classList.toggle('hidden');
+        }
+
+        function switchSplitTab(tab) {
+            splitTab = tab;
+            document.querySelectorAll('[id^="split-tab-"]').forEach(btn => btn.classList.remove('tab-active'));
+            document.getElementById(`split-tab-${tab}`).classList.add('tab-active');
+
+            document.getElementById('splitHtmlText').classList.add('hidden');
+            document.getElementById('splitCssText').classList.add('hidden');
+            document.getElementById('splitJsText').classList.add('hidden');
+
+            if (tab === 'html') document.getElementById('splitHtmlText').classList.remove('hidden');
+            if (tab === 'css') document.getElementById('splitCssText').classList.remove('hidden');
+            if (tab === 'js') document.getElementById('splitJsText').classList.remove('hidden');
+        }
+
+        function liveUpdateRunner() {
+            const html = document.getElementById('splitHtmlText').value;
+            const css = document.getElementById('splitCssText').value;
+            const js = document.getElementById('splitJsText').value;
+            compileAndRunIframe(html, css, js);
+        }
+
+        function applySplitCodeChanges() {
+            playSound('run');
+            const html = document.getElementById('splitHtmlText').value;
+            const css = document.getElementById('splitCssText').value;
+            const js = document.getElementById('splitJsText').value;
+
+            if (currentRunnerId) {
+                const p = projects.find(item => item.id === currentRunnerId);
+                if (p) {
+                    p.htmlCode = html;
+                    p.cssCode = css;
+                    p.jsCode = js;
+                    saveToStorage();
+                }
+            }
+            compileAndRunIframe(html, css, js);
+        }
+
+        function exportStandaloneHTML(id) {
+            const p = projects.find(item => item.id === id);
+            if (!p) return;
+
+            const fullContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${p.title}</title>
+    <style>
+${p.cssCode || ''}
+    </style>
+</head>
+<body>
+${p.htmlCode || ''}
+    <script>
+${p.jsCode || ''}
+    <\/script>
+</body>
+</html>`;
+
+            const blob = new Blob([fullContent], { type: 'text/html' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `${p.title.toLowerCase().replace(/[^a-z0-9]/g, '_')}_export.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            playSound('click');
+        }
+
+        // DUPLICATE PROJECT
+        function duplicateProject(id) {
+            const original = projects.find(p => p.id === id);
+            if (!original) return;
+
+            const copy = {
+                ...JSON.parse(JSON.stringify(original)),
+                id: 'proj-' + Date.now(),
+                title: original.title + ' (Copy)',
+                createdDate: new Date().toISOString().split('T')[0]
+            };
+            projects.unshift(copy);
+            saveToStorage();
+            renderProjects();
+            playSound('click');
+        }
+
+        // MODALS HANDLERS
+        function openNewProjectModal() {
+            playSound('click');
+            document.getElementById('modalTitle').innerHTML = `<i class="fa-solid fa-file-circle-plus text-neonBlue"></i> Create New Web Project`;
+            document.getElementById('projectForm').reset();
+            document.getElementById('formProjectId').value = '';
+            document.getElementById('projectModal').classList.remove('hidden');
+        }
+
+        function openEditModal(id) {
+            playSound('click');
+            const p = projects.find(item => item.id === id);
+            if (!p) return;
+
+            document.getElementById('modalTitle').innerHTML = `<i class="fa-solid fa-pen-to-square text-neonPurple"></i> Edit Project`;
+            document.getElementById('formProjectId').value = p.id;
+            document.getElementById('formTitle').value = p.title;
+            document.getElementById('formCategory').value = p.category;
+            document.getElementById('formDescription').value = p.description || '';
+            document.getElementById('formStatus').value = p.status;
+            document.getElementById('formTech').value = p.techStack.join(', ');
+            document.getElementById('formLiveUrl').value = p.liveUrl || '';
+            document.getElementById('formGithubUrl').value = p.githubUrl || '';
+            document.getElementById('formImage').value = p.image || '';
+            document.getElementById('formTags').value = p.tags.join(', ');
+            document.getElementById('formHtmlCode').value = p.htmlCode || '';
+            document.getElementById('formCssCode').value = p.cssCode || '';
+            document.getElementById('formJsCode').value = p.jsCode || '';
+            document.getElementById('formNotes').value = p.notes || '';
+
+            document.getElementById('projectModal').classList.remove('hidden');
+        }
+
+        function closeProjectModal() {
+            document.getElementById('projectModal').classList.add('hidden');
+        }
+
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    document.getElementById('formImage').value = evt.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function saveProject(e) {
+            e.preventDefault();
+            playSound('click');
+
+            const id = document.getElementById('formProjectId').value;
+            const title = document.getElementById('formTitle').value.trim();
+            const category = document.getElementById('formCategory').value;
+            const description = document.getElementById('formDescription').value.trim();
+            const status = document.getElementById('formStatus').value;
+            const techStack = document.getElementById('formTech').value.split(',').map(s => s.trim()).filter(Boolean);
+            const liveUrl = document.getElementById('formLiveUrl').value.trim();
+            const githubUrl = document.getElementById('formGithubUrl').value.trim();
+            const image = document.getElementById('formImage').value.trim();
+            const tags = document.getElementById('formTags').value.split(',').map(s => s.trim()).filter(Boolean);
+            const htmlCode = document.getElementById('formHtmlCode').value;
+            const cssCode = document.getElementById('formCssCode').value;
+            const jsCode = document.getElementById('formJsCode').value;
+            const notes = document.getElementById('formNotes').value.trim();
+
+            if (id) {
+                const idx = projects.findIndex(p => p.id === id);
+                if (idx !== -1) {
+                    projects[idx] = { ...projects[idx], title, category, description, status, techStack, liveUrl, githubUrl, image, tags, htmlCode, cssCode, jsCode, notes };
+                }
+            } else {
+                const newProject = {
+                    id: 'proj-' + Date.now(),
+                    title, category, description, status,
+                    createdDate: new Date().toISOString().split('T')[0],
+                    liveUrl, githubUrl, techStack, tags, image,
+                    favorite: false, trashed: false, htmlCode, cssCode, jsCode, notes
+                };
+                projects.unshift(newProject);
+            }
+
+            saveToStorage();
+            closeProjectModal();
+            renderProjects();
+        }
+
+        function toggleFavorite(id) {
+            playSound('click');
+            const p = projects.find(item => item.id === id);
+            if (p) {
+                p.favorite = !p.favorite;
+                saveToStorage();
+                renderProjects();
+            }
+        }
+
+        function moveToTrash(id) {
+            playSound('click');
+            const p = projects.find(item => item.id === id);
+            if (p) {
+                p.trashed = true;
+                saveToStorage();
+                renderProjects();
+            }
+        }
+
+        function restoreFromTrash(id) {
+            playSound('click');
+            const p = projects.find(item => item.id === id);
+            if (p) {
+                p.trashed = false;
+                saveToStorage();
+                renderProjects();
+            }
+        }
+
+        function deletePermanently(id) {
+            if (confirm("Permanently delete this project?")) {
+                playSound('click');
+                projects = projects.filter(p => p.id !== id);
+                saveToStorage();
+                renderProjects();
+            }
+        }
+
+        // DETAIL MODAL HANDLER
+        function openDetailModal(id) {
+            playSound('click');
+            const p = projects.find(item => item.id === id);
+            if (!p) return;
+
+            currentDetailId = id;
+            document.getElementById('detailCategoryBadge').innerText = p.category;
+            document.getElementById('detailTitle').innerText = p.title;
+            document.getElementById('detailDescription').innerText = p.description || 'No description provided.';
+            
+            document.getElementById('detailStatusPill').outerHTML = getStatusBadge(p.status);
+
+            document.getElementById('detailTechStack').innerHTML = p.techStack.map(t => `<span class="text-xs bg-slate-800 text-neonBlue border border-slate-700 px-2.5 py-0.5 rounded-lg font-mono">${t}</span>`).join('');
+            document.getElementById('detailTags').innerHTML = p.tags.map(t => `<span class="text-xs text-slate-400">#${t}</span>`).join('');
+
+            const imgEl = document.getElementById('detailImage');
+            const fallback = `https://placehold.co/800x400/111318/00f0ff?text=${encodeURIComponent(p.title)}`;
+            imgEl.src = p.image || fallback;
+            imgEl.onerror = () => { imgEl.src = fallback; };
+
+            document.getElementById('detailRunBtn').onclick = () => { closeDetailModal(); openRunnerModal(p.id); };
+            document.getElementById('detailFavBtn').innerHTML = `<i class="fa-solid fa-star ${p.favorite ? 'text-amber-400' : 'text-slate-500'}"></i>`;
+            document.getElementById('detailEditBtn').onclick = () => { closeDetailModal(); openEditModal(p.id); };
+
+            document.getElementById('detailNotes').innerText = p.notes || 'No documentation notes.';
+            switchCodeTab('html');
+
+            document.getElementById('detailModal').classList.remove('hidden');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+            currentDetailId = null;
+        }
+
+        function toggleFavoriteCurrentDetail() {
+            if (currentDetailId) {
+                toggleFavorite(currentDetailId);
+                const p = projects.find(item => item.id === currentDetailId);
+                if (p) {
+                    document.getElementById('detailFavBtn').innerHTML = `<i class="fa-solid fa-star ${p.favorite ? 'text-amber-400' : 'text-slate-500'}"></i>`;
+                }
+            }
+        }
+
+        function switchCodeTab(tab) {
+            const p = projects.find(item => item.id === currentDetailId);
+            if (!p) return;
+
+            document.querySelectorAll('.code-tab-btn').forEach(btn => {
+                btn.classList.remove('bg-vaultBorder', 'text-amber-300', 'text-blue-300', 'text-emerald-300');
+                btn.classList.add('text-slate-400');
+            });
+
+            const activeBtn = document.getElementById(`tab-${tab}`);
+            activeBtn.classList.add('bg-vaultBorder');
+
+            const codeEl = document.getElementById('codeDisplay');
+            if (tab === 'html') {
+                activeBtn.classList.add('text-amber-300');
+                codeEl.innerText = p.htmlCode || '<!-- No HTML snippet -->';
+            } else if (tab === 'css') {
+                activeBtn.classList.add('text-blue-300');
+                codeEl.innerText = p.cssCode || '/* No CSS snippet */';
+            } else if (tab === 'js') {
+                activeBtn.classList.add('text-emerald-300');
+                codeEl.innerText = p.jsCode || '// No JS snippet';
+            }
+        }
+
+        function copyCurrentCode() {
+            const codeText = document.getElementById('codeDisplay').innerText;
+            const temp = document.createElement('textarea');
+            temp.value = codeText;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            alert('Code snippet copied to clipboard!');
+        }
+
+        // BACKUP EXPORT & IMPORT
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projects, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `web_project_vault_backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importData(e) {
+            const fileReader = new FileReader();
+            fileReader.onload = function(event) {
+                try {
+                    const imported = JSON.parse(event.target.result);
+                    if (Array.isArray(imported)) {
+                        projects = imported;
+                        saveToStorage();
+                        renderProjects();
+                        alert('Projects imported successfully!');
+                    }
+                } catch (err) { alert('Invalid JSON format.'); }
+            };
+            if (e.target.files[0]) fileReader.readAsText(e.target.files[0]);
+        }
+
+        // KEYBOARD SHORTCUTS
+        function setupKeyboardShortcuts() {
+            window.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                    e.preventDefault();
+                    document.getElementById('searchInput').focus();
+                } else if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                    e.preventDefault();
+                    openNewProjectModal();
+                } else if (e.key === 'Escape') {
+                    closeRunnerModal();
+                    closeProjectModal();
+                    closeDetailModal();
+                }
+            });
+        }
+
+        // MOBILE SIDEBAR SETUP
+        function setupMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            document.getElementById('openSidebarMobile').onclick = () => sidebar.classList.remove('-translate-x-full');
+        }
+    </script>
+</body>
+</html>
